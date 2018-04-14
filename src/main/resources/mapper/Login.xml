@@ -1,0 +1,71 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <!-- namespace="com.richfit.scp.reporting.mapper.SbReportMapper" -->
+<mapper namespace="com.pk.mapper.LoginMapper">
+ <select id="checkWhetherCanRegisterPhone" resultType="hashmap">
+     SELECT * FROM user_login WHERE UL_ISDELETED=0 AND UL_MOBILE=#{phoneNumber}
+ </select>
+  <select id="checkWhetherCanRegisterEmail" resultType="hashmap">
+     SELECT * FROM user_login WHERE UL_ISDELETED=0 AND UL_EMAIL=#{email}
+ </select>
+ <update id="updatePasswordByPhone"  >
+    UPDATE user_login SET  UL_PASSWD=#{password} where UL_MOBILE=#{phoneNumber}
+ </update>
+ <update id="updatePasswordByEmail"  >
+    UPDATE user_login SET  UL_PASSWD=#{password} where UL_EMAIL=#{email}
+ </update>
+ <insert id="register" >
+     INSERT INTO user_login (UL_ID,UL_CT,UL_ISDELETED,UL_LEVEL,UL_MOBILE,UL_PASSWD,UL_EMAIL)
+     VALUES (#{id},NOW(),'0','1',#{phoneNumber},#{password},#{email})
+ </insert>
+ <select id="getSnumberByPhone" resultType="hashmap">
+    SELECT b.SN_NUMBER FROM user_login a LEFT JOIN searchnumber b ON a.UL_ID=b.SN_LOGIN_ID WHERE UL_MOBILE=#{phoneNumber}
+ </select>
+ <select id="getSnumberByEmail" resultType="hashmap">
+    SELECT b.SN_NUMBER FROM user_login a LEFT JOIN searchnumber b ON a.UL_ID=b.SN_LOGIN_ID WHERE UL_EMAIL=#{email}
+ </select>
+ <insert id="addUserLevel" >
+   insert into level (LE_ID,LE_LEVEL,LE_LOGIN_ID,LE_EXP,LE_MILES,LE_ISDELETED,LE_CH) values(#{le_id},0,#{user_id},0,0,0,'datanull')
+ </insert>
+ <insert id="addUserExtInf">
+   insert into user_extinf values(#{ue_id},'0','datanull',NOW(),'datanull','datanull','0','datanull',#{ul_id},#{ue_name},'datanull','datanull','datanull',NOW())
+ </insert>
+ <insert id="addBaseInf" >
+   insert into user_baseinf values(#{ub_id},'0','datanull','datanull','datanull',NOW(),'datanull','datanull','0',#{ul_id},#{ul_mobile},#{ue_name},#{ub_sex},NOW(),'datanull')
+ </insert>
+ <select id="findLatestNumber" resultType="hashmap">
+    select SN_NUMBER,SN_COUNT from searchnumber order by SN_COUNT desc
+ </select>
+ <insert id="addFirstNumber" >
+    insert into searchnumber values(#{sn_id},1,#{ul_id},'100000')
+ </insert>
+ <insert id="addNumber" >
+    insert into searchnumber values(#{sn_id},#{sn_count},#{ul_id},#{snnumber})
+ </insert>
+ <select id="getNameAndId" resultType="hashmap">
+ select a.UL_ID,b.UE_NAME from user_login a left join user_extinf b on a.UL_ID=b.UE_LOGIN_ID  where UL_ISDELETED=0
+ </select>
+ <select id="getNameById" resultType="string">
+ select UE_NAME from user_extinf where UE_LOGIN_ID=#{id}
+ </select>
+ <select id="Login" resultType="hashmap">
+ select a.UL_ID,a.UL_ISDELETED,b.SN_NUMBER,c.UB_SEX,d.UE_NAME from user_login a 
+    inner join searchnumber b on a.UL_ID=b.SN_LOGIN_ID 
+    inner join user_baseinf c on c.UB_LOGIN_ID=a.UL_ID
+    inner join user_extinf d on d.UE_LOGIN_ID=a.UL_ID
+     where a.UL_MOBILE=#{phoneNumber} 
+ and a.UL_PASSWD=#{password}
+ </select>
+  <select id="LoginByEmail" resultType="hashmap">
+ select a.UL_ID,a.UL_ISDELETED,b.SN_NUMBER,c.UB_SEX,d.UE_NAME from user_login a 
+    inner join searchnumber b on a.UL_ID=b.SN_LOGIN_ID 
+    inner join user_baseinf c on c.UB_LOGIN_ID=a.UL_ID
+    inner join user_extinf d on d.UE_LOGIN_ID=a.UL_ID
+     where a.UL_EMAIL=#{email} 
+ and a.UL_PASSWD=#{password}
+ </select>
+ <insert id="Personality">
+     insert into personality (P_ID,P_LOGIN_ID,P_TYPE) values (#{p_id},#{login_id},#{user_type})
+ </insert>
+</mapper>

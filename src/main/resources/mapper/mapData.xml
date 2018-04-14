@@ -1,0 +1,153 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.pk.mapper.MapDataMapper">
+   <select id="getMapRandomData" resultType="hashmap">
+      select u.UE_HEADICON,e.SN_NUMBER,u.UE_COMHEADICON,a.VB_VIDEO_PATH,a.VB_COMMENT_COUNT,a.VB_POP_COUNT,
+         u.UE_USER_BG,ub.UB_CONSTELLATION,u.UE_NAME ,ub.UB_SEX,a.VB_TYPE,a.VB_RANGE,
+         a.VB_CT,a.VB_LOGIN_ID,u.UE_LOGIN_ID,ub.UB_LOGIN_ID ,a.VB_TITLE,a.VB_ID,a.VB_LONGITUDE,a.VB_LATITUDE, 
+         a.VB_IMAGE_PATH,a.VB_VOICE_PATH,a.VB_COMIMAGE_PATH,a.VB_TEXT 
+         from v_blog a 
+         inner join searchnumber e on e.SN_LOGIN_ID=a.VB_LOGIN_ID 
+         inner join user_baseinf ub on ub.UB_LOGIN_ID=a.VB_LOGIN_ID  
+         inner join user_extinf u on u.UE_LOGIN_ID=a.VB_LOGIN_ID 
+         where  a.VB_ISDELETED=0 and a.VB_FRIENDCANSEE='0'
+         and  round((UNIX_TIMESTAMP(NOW())-UNIX_TIMESTAMP(a.VB_CT))/60)>1  
+            <if test="vb_latitude_sw>vb_latitude_ne">
+                and (a.VB_LATITUDE between #{vb_latitude_ne} and #{vb_latitude_sw})
+            </if>
+            <if test="vb_latitude_sw &lt;=vb_latitude_ne">
+                and (a.VB_LATITUDE between #{vb_latitude_sw} and #{vb_latitude_ne})
+            </if>
+              <choose>
+                <when test="vb_longitude_sw>0 and vb_longitude_ne &lt; 0">
+                and ((a.VB_LONGITUDE>= #{vb_longitude_sw} and a.VB_LONGITUDE &lt;= 180) or (
+            (a.VB_LONGITUDE>=-180 and a.VB_LONGITUDE &lt;= #{vb_longitude_ne}) ))
+               </when>
+               <otherwise>
+                  and (a.VB_LONGITUDE >=#{vb_longitude_sw} and a.VB_LONGITUDE &lt;=#{vb_longitude_ne})
+               </otherwise>
+             </choose>
+            and a.VB_RANGE !='own'
+            <if test="sex !='All'.toString()">
+               and ub.UB_SEX=#{sex}
+            </if>
+            and (a.VB_THESEX=#{userSex} or a.VB_THESEX='All')
+            and a.VB_CT &lt;=(select VB_CT from v_blog left join user_baseinf ub on ub.UB_LOGIN_ID=VB_LOGIN_ID where 
+            VB_ISDELETED=0  and VB_FRIENDCANSEE='0'
+         and  round((UNIX_TIMESTAMP(NOW())-UNIX_TIMESTAMP(VB_CT))/60)>1 
+            <if test="vb_latitude_sw>vb_latitude_ne">
+                and (VB_LATITUDE between #{vb_latitude_ne} and #{vb_latitude_sw})
+            </if>
+            <if test="vb_latitude_sw &lt;=vb_latitude_ne">
+                and (VB_LATITUDE between #{vb_latitude_sw} and #{vb_latitude_ne})
+            </if>
+             <choose>
+                <when test="vb_longitude_sw>0 and vb_longitude_ne &lt; 0">
+                and ((VB_LONGITUDE>= #{vb_longitude_sw} and VB_LONGITUDE &lt;= 180) or (
+            (VB_LONGITUDE>=-180 and VB_LONGITUDE &lt;= #{vb_longitude_ne}) ))
+               </when>
+               <otherwise>
+                  and (VB_LONGITUDE >=#{vb_longitude_sw} and VB_LONGITUDE &lt;=#{vb_longitude_ne})
+               </otherwise>
+             </choose>
+            and VB_RANGE !='own'
+            <if test="sex !='All'.toString()">
+               and ub.UB_SEX=#{sex}
+            </if>
+            and (VB_THESEX=#{userSex} or VB_THESEX='All')
+            order by VB_CT desc limit #{allCount},1
+            )
+            order by a.VB_CT desc limit #{pageSize}           
+   </select>
+   <select id="checkWhetherPOP" resultType="hashmap">
+      select DZ_USER_ID from dianzan where DZ_BLOG_ID=#{vb_id} and DZ_USER_ID=#{user_id}
+   </select>
+   <select id="getFoot" resultType="hashmap">
+      select a.*,b.*,c.*,e.SN_NUMBER from v_blog a 
+				left join user_extinf b on b.UE_LOGIN_ID=a.VB_LOGIN_ID
+				left join user_baseinf c on c.UB_LOGIN_ID=a.VB_LOGIN_ID
+				left join searchnumber e on e.SN_LOGIN_ID=a.VB_LOGIN_ID
+				where VB_LOGIN_ID=#{user_id} and VB_ISDELETED=0  order by VB_CT asc
+   </select>
+   <select id="getUserIdBySnnumber" resultType="string">
+      select UL_ID from user_login left join searchnumber b on b.SN_LOGIN_ID=UL_ID where b.SN_NUMBER=#{snnumber}
+   </select>
+   <select id="getDynamic" resultType="hashmap">
+      select a.*,c.*,d.UE_NAME,a.VB_LOGIN_ID,d.UE_LOGIN_ID,f.UB_LOGIN_ID,d.UE_HEADICON,f.UB_SEX,e.SN_NUMBER from v_blog a					
+		left join (select * from dianzan where DZ_USER_ID=#{vb_login_id}) c on c.DZ_BLOG_ID =a.VB_ID 
+		left join user_extinf d on d.UE_LOGIN_ID=a.VB_LOGIN_ID 
+		left join user_baseinf f on f.UB_LOGIN_ID=a.VB_LOGIN_ID
+		left join searchnumber e on e.SN_LOGIN_ID=a.VB_LOGIN_ID 
+		where a.VB_LOGIN_ID=#{vb_login_id}   
+		and a.VB_ISDELETED=0 
+		and a.VB_CT &lt;=(select VB_CT from v_blog where  VB_LOGIN_ID=#{vb_login_id}  
+		and VB_ISDELETED=0 order by VB_CT desc limit #{allCount},1)
+		order by a.VB_CT desc limit #{pageSize}
+   </select>
+   <select id="getMyConcernDynamic" resultType="hashmap">
+      select d.*,c.*,b.UB_CONSTELLATION, b.UB_LOGIN_ID,b.UB_SEX,a.CC_CONCERNED_ID,a.CC_REMARK,e.SN_NUMBER from 
+					 (select * from v_blog where VB_ISDELETED=0 and VB_RANGE=0 and (VB_THESEX=#{theSex} or VB_THESEX='All')) d 
+					 left join user_baseinf b on b.UB_LOGIN_ID=d.VB_LOGIN_ID 
+					 left join  user_extinf c on c.UE_LOGIN_ID=d.VB_LOGIN_ID 
+					 left join searchnumber e on e.SN_LOGIN_ID=d.VB_LOGIN_ID 
+					 left join concern a  on d.VB_LOGIN_ID=a.CC_CONCERNED_ID 
+				     where a.CC_CONCERN_ID=#{ul_id} and a.CC_ISDELETED=0 and d.VB_CT &lt;=(select m.VB_CT from v_blog m left join concern n on m.VB_LOGIN_ID=n.CC_CONCERNED_ID 
+				     where  m.VB_ISDELETED=0 and m.VB_RANGE=0 and (m.VB_THESEX=#{theSex} or m.VB_THESEX='All') and n.CC_CONCERN_ID=#{ul_id} 
+             order by m.VB_CT desc limit #{allCount},1) 
+				     order by d.VB_CT desc limit #{pageSize}
+   </select>
+    <select id="getMyFansDynamic" resultType="hashmap">
+      select d.*,c.*,b.UB_CONSTELLATION, b.UB_LOGIN_ID,b.UB_SEX,a.CC_CONCERNED_ID,a.CC_REMARK,e.SN_NUMBER from 
+					 (select * from v_blog where VB_ISDELETED=0 and VB_RANGE=0 and (VB_THESEX=#{theSex} or VB_THESEX='All')) d 
+					 left join user_baseinf b on b.UB_LOGIN_ID=d.VB_LOGIN_ID 
+					 left join  user_extinf c on c.UE_LOGIN_ID=d.VB_LOGIN_ID 
+					 left join searchnumber e on e.SN_LOGIN_ID=d.VB_LOGIN_ID 
+					 left join concern a  on d.VB_LOGIN_ID=a.CC_CONCERN_ID 
+				     where a.CC_CONCERNED_ID=#{ul_id} and a.CC_ISDELETED=0 and d.VB_CT &lt;=(select m.VB_CT from v_blog m left join concern n on m.VB_LOGIN_ID=n.CC_CONCERN_ID 
+				     where  m.VB_ISDELETED=0 and m.VB_RANGE=0 and (m.VB_THESEX=#{theSex} or m.VB_THESEX='All') and n.CC_CONCERNED_ID=#{ul_id} 
+             order by m.VB_CT desc limit #{allCount},1) 
+				     order by d.VB_CT desc limit #{pageSize}
+   </select>
+   <select id="getMyConcern" resultType="hashmap">
+        select (case  when d.CC_CONCERN_ID is null then 0 else 1 end) EACHCONCERNED,
+    b.UE_USER_BG,b.UE_LOGIN_ID,c.UB_SEX,c.UB_CONSTELLATION,c.UB_LOGIN_ID VB_LOGIN_ID,b.UE_INTRODUCETION,a.CC_REMARK,
+    a.CC_ID,a.CC_CONCERNED_ID,a.CC_CONCERN_ID,a.CC_CT,b.UE_COMHEADICON,b.UE_HEADICON,b.UE_LOCATION,
+    b.UE_NAME,c.UB_SEX,e.SN_NUMBER from concern a 		
+   left join user_extinf b on b.UE_LOGIN_ID=a.CC_CONCERNED_ID 
+   left join user_baseinf c on c.UB_LOGIN_ID=a.CC_CONCERNED_ID 
+   left join searchnumber e on e.SN_LOGIN_ID=a.CC_CONCERNED_ID 
+   left join (select CC_CONCERN_ID from concern where CC_CONCERNED_ID=#{user_id} and CC_ISDELETED=0) d 
+   on a.CC_CONCERNED_ID=d.CC_CONCERN_ID 
+    where a.CC_CONCERN_ID=#{user_id} and 
+    a.CC_ISDELETED=0 
+    and a.CC_CT &lt;=(select e.CC_CT from concern e  
+    where e.CC_CONCERN_ID=a.CC_CONCERN_ID and e.CC_ISDELETED=0 order by e.CC_CT desc limit #{allCount},1)
+    order by a.CC_CT desc  limit #{pageSize}
+   </select>
+      <select id="getFans" resultType="hashmap">
+  select b.UE_USER_BG,c.UB_SEX,c.UB_CONSTELLATION,b.UE_LOGIN_ID,,c.UB_LOGIN_ID VB_LOGIN_ID,
+   		b.UE_INTRODUCETION,,b.UE_LOGIN_ID,a.CC_ID,e.SN_NUMBER,a.CC_CONCERNED_ID,a.CC_CONCERN_ID,a.CC_CT,
+   		b. UE_COMHEADICON,b.UE_HEADICON,b.UE_LOCATION,b.UE_NAME,c.UB_SEX from concern a
+   					left join user_extinf b on b.UE_LOGIN_ID=a.CC_CONCERN_ID
+   					left join user_baseinf c on c.UB_LOGIN_ID=a.CC_CONCERN_ID
+   					left join searchnumber e on e.SN_LOGIN_ID=a.CC_CONCERN_ID
+   					 where a.CC_CONCERNED_ID=#{user_id} and
+   					 a.CC_ISDELETED=0
+   					and a.CC_CT &lt;=(select e.CC_CT from concern e  where e.CC_CONCERNED_ID=a.CC_CONCERNED_ID
+              and e.CC_ISDELETED=0 order by  e.CC_CT desc  limit #{allCount},1)
+   					 order by a.CC_CT desc limit #{pageSize}
+   </select>
+   <select id="findUsersBySnnumber" resultType="hashmap">
+     select a.*,b.UB_SEX,b.UB_CONSTELLATION,b.UB_LOGIN_ID VB_LOGIN_ID,c.SN_NUMBER from searchnumber c 
+				 left  join user_extinf a  on a.UE_LOGIN_ID=c.SN_LOGIN_ID 
+				left join user_baseinf b on b.UB_LOGIN_ID=c.SN_LOGIN_ID 
+				 where c.SN_NUMBER=#{searchOptions}
+   </select>
+   <select id="findUsersByUserName" resultType="hashmap">
+     select a.*,b.UB_SEX,b.UB_CONSTELLATION,b.UB_LOGIN_ID VB_LOGIN_ID,c.SN_NUMBER from user_extinf a 
+						left join user_baseinf b  on a.UE_LOGIN_ID=b.UB_LOGIN_ID 
+						left join searchnumber c on c.SN_LOGIN_ID=a.UE_LOGIN_ID 
+						where a.UE_NAME LIKE '%${userName}%';
+   </select>
+ </mapper>

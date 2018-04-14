@@ -1,0 +1,48 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.mapper.ConcernMapper">
+<select id="checkWhetherConcerned" resultType="hashmap">
+  select * from concern where CC_CONCERN_ID=#{ul_id} and CC_CONCERNED_ID=#{concerned_id} and CC_ISDELETED=0
+</select>
+<insert id="addConcern">
+   insert into concern
+    (CC_ID,CC_CONCERNED_ID,CC_CONCERN_ID,CC_CT,CC_ISDELETED,CC_REMARK)
+    values(#{cc_id},#{concerned_id},#{ul_id},NOW(),'0',#{remark})
+</insert>
+<select id="checkWhetherReported" resultType="hashmap">
+select * from blog_report where 
+ BR_USER_ID=#{reporter} and BR_BLOG_ID=#{blog_id}
+</select>
+<insert id="addReport">
+   insert into blog_report (BR_ID,BR_BLOG_ID,BR_REPORT_RESION,BR_USER_ID) 
+   values(#{br_id},#{blog_id},'datanull',#{reporter})
+</insert>
+<update id="updateReportCount">
+  update v_blog set VB_REPORT_COUNT=VB_REPORT_COUNT+1 where VB_ID=#{blog_id}
+</update>
+<select id="checkWhetherDianzaned" resultType="hashmap">
+   select * from dianzan where DZ_USER_ID=#{user_id} and DZ_BLOG_ID=#{blog_id}
+</select>
+<insert id="addDianZan">
+insert into dianzan values(#{dz_id},#{blog_id},'1',#{user_id})
+</insert>
+<update id="addDianZanCount">
+update v_blog set VB_POP_COUNT=VB_POP_COUNT+1 where VB_ID=#{blog_id}
+</update>
+<update id="saveBg">
+   update user_extinf set UE_USER_BG=#{com_img_path},UE_USER_COMBG=#{img_path} where UE_LOGIN_ID=#{user_id}
+</update>
+<select id="checkWheTherConcernedEachOther" resultType="hashmap">
+select count(*) from concern where (CC_CONCERNED_ID=#{myself_id} and  CC_CONCERN_ID=#{user_id}) or ( CC_CONCERN_ID=#{myself_id} and  CC_CONCERNED_ID=#{user_id})
+</select>
+
+<update id="changeRemarkName">
+  update concern set CC_REMARK=#{nick_name} 
+  where CC_CONCERNED_ID=#{concerned_id} and CC_CONCERN_ID=#{ul_id}
+</update>
+<update id="cancelConcern">
+   update concern set CC_ISDELETED=1 where 
+   CC_CONCERN_ID=#{ul_id} and CC_CONCERNED_ID=#{concerned_id}
+</update>
+</mapper>

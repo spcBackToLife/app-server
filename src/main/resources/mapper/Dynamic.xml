@@ -1,0 +1,54 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.mapper.DynamicMapper">
+	<insert id="saveDynamic" >
+	  insert into v_blog (VB_ID,VB_CHOOSESTYLE,VB_COMIMAGE_PATH,VB_COMMENT_COUNT,VB_CT,VB_IMAGE_PATH,
+		VB_ISDELETED,VB_LATITUDE,VB_LOGIN_ID,VB_LONGITUDE,VB_POP_COUNT,
+				  		VB_RANGE,VB_REPORT_COUNT,VB_TEXT,VB_THEONE_ID,VB_THESEX,
+		          VB_TITLE,VB_TYPE,VB_VIEW_COUNT,VB_VOICE_PATH,VB_FRIENDCANSEE,VB_VIDEO_PATH) 
+		          values(#{vb_id},0,
+				  		#{vb_com_img_path},#{vb_comment_count},NOW(),#{vb_img_path},'0',
+				  		#{vb_latitude},#{vb_login_id},
+		          #{vb_longitude},#{vb_pop_count},#{vb_range}
+				  		,'0',#{vb_text},#{vb_the_one_id},#{vb_the_sex},
+		          #{vb_title},#{vb_type},'0','datanull',#{vb_friend_can_see},#{vb_video_path})
+	</insert>
+	<update id="savePersonBaseInfo">
+	  update user_baseinf set UB_CONSTELLATION=#{constellation},
+					UB_INTRODUCTION=#{introduction},UB_NAME=#{name}
+					 where UB_LOGIN_ID=#{user_id}
+	</update>
+	<update id="savePersonExtInfo">
+	update  user_extinf set UE_LOCATION=#{location},
+		UE_HEADICON=#{head_icon},UE_COMHEADICON=#{com_head_icon},
+		UE_INTRODUCETION=#{introduction},UE_NAME=#{name}
+		 where UE_LOGIN_ID=#{user_id}
+	</update>
+	<update id="saveHeadIcon">
+	   update user_extinf set  UE_HEADICON=#{head_icon},UE_COMHEADICON=#{com_head_icon} 
+	   where  UE_LOGIN_ID=#{user_id} 
+	</update>
+	<select id="getPersonInfo" resultType="hashmap">
+	   SELECT p.*,a.*,b.*,c.NOTICE_COUNTS,d.SN_NUMBER,m.FANS_COUNT,n.CONCERN_COUNT from user_baseinf a 
+		left join searchnumber d on a.UB_LOGIN_ID=d.SN_LOGIN_ID 
+		 left join level p on p.LE_LOGIN_ID=a.UB_LOGIN_ID
+		 left join user_extinf b  on a.UB_LOGIN_ID=b.UE_LOGIN_ID 
+		 left join (select count(*) FANS_COUNT,#{user_id} TEMP
+		  from concern where CC_CONCERNED_ID=#{user_id} and CC_ISDELETED=0) m on m.TEMP=#{user_id}
+		 left join (select count(*) CONCERN_COUNT,#{user_id} TEMP 
+		 from concern where CC_CONCERN_ID=#{user_id} and CC_ISDELETED=0 ) n on n.TEMP=#{user_id}			
+		 left join (select count(*) NOTICE_COUNTS,#{user_id} TEMP  
+		 from noticecount where NOT_ISDELETED=0 and NOT_LOGIN_ID =#{user_id}) c on c.TEMP=#{user_id}
+		  where a.UB_LOGIN_ID=#{user_id}
+	</select>
+	<update id="deleteDynamic">
+	  update v_blog  set VB_ISDELETED='1' where VB_ID=#{blog_id}
+	</update>
+	<update id="deleteMyPackage">
+	  update mypackage  set MP_ISDELETED='1' where MP_BLOG_ID=#{blog_id}
+	</update>
+	<select id="whetherIsMyDynamic" resultType="hashmap">
+	   select VB_ID from v_blog where VB_ID=#{blog_id} and VB_LOGIN_ID=#{user_id} and VB_ISDELETED=0
+	</select>
+</mapper>
