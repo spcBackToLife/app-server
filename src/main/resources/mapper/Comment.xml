@@ -1,0 +1,108 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pk.mapper.CommentMapper">
+<insert id="saveComment">
+	insert into comments values(
+	#{co_id},#{blog_creater_id},#{blog_id},
+	#{com_img_path},#{commenter_id},
+	#{comment_level},NOW(),'0',#{img_path},
+	'0',#{be_replied_id},#{content},#{voicePath})
+</insert>
+<select id="getRepliedUserId" resultType="string">
+select CO_COMMENTER_ID from comments where CO_ID=#{co_replied_id}
+</select>
+<update id="updateTimeOfNotice">
+   update notice  set NO_CT=NOW() 
+   where NO_COMMENT_ID=#{comment_id}
+</update>
+<select id="getNoticeCount" resultType="long">
+   select count(*) from noticecount where NOT_LOGIN_ID=#{ul_id} and NOT_ISDELETED=0
+</select>
+<insert id="addNoticeCount">
+  insert into noticecount values(#{no_id},NOW(),0,#{blog_creater_id})
+</insert>
+<insert id="addNotice">
+  insert into notice values (#{no_id},#{blog_id},#{commenter_id},
+  #{comment_id},NOW(),#{blog_creater_id},'0')
+</insert>
+<update id="updateWheTherHasChild">
+   update comments set CO_HAS_CHILD=1  where  CO_ID=#{co_replied_id}
+</update>
+<insert id="updateCommentCount">
+update v_blog set VB_COMMENT_COUNT=VB_COMMENT_COUNT+1 where VB_ID=#{blog_id}
+</insert>
+<select id="getCommentToAuthorSelf" resultType="hashmap">
+select a.*,d.*,c.*,e.SN_NUMBER,d.UE_LOGIN_ID VB_LOGIN_ID,d.UE_LOGIN_ID  from comments a 
+	 left join searchnumber e on e.SN_LOGIN_ID=a.CO_COMMENTER_ID 
+	 left join (select * from user_extinf ) d on a.CO_COMMENTER_ID=d.UE_LOGIN_ID  
+	 left join (select * from user_baseinf ) c on c.UB_LOGIN_ID=a.CO_COMMENTER_ID  	
+     where  a.CO_BLOG_ID=#{blog_id} and a.CO_COMMENT_LEVEL=1 
+	 and a.CO_CT &lt;=(select CO_CT from comments where CO_BLOG_ID=#{blog_id}
+	 and CO_COMMENT_LEVEL=1
+	 order by CO_CT desc limit #{allCount},1)
+	 order by a.CO_CT desc limit #{pageSize}
+</select>
+<select id="getCommentToMe">
+select a.*,d.*,c.*,e.SN_NUMBER,d.UE_LOGIN_ID ,d.UE_LOGIN_ID VB_LOGIN_ID from comments a 
+	 left join searchnumber e on e.SN_LOGIN_ID=a.CO_COMMENTER_ID 
+	 left join (select * from user_extinf ) d on a.CO_COMMENTER_ID=d.UE_LOGIN_ID  
+	 left join (select * from user_baseinf ) c on c.UB_LOGIN_ID=a.CO_COMMENTER_ID  	
+     where  a.CO_BLOG_ID=#{blog_id} and a.CO_COMMENT_LEVEL=1 
+     and (a.CO_COMMENTER_ID=#{ul_id} or a.CO_COMMENTER_ID=a.CO_BLOG_CREATER_ID)
+	 and a.CO_CT &lt;=(select CO_CT from comments where CO_BLOG_ID=#{blog_id}
+	 and CO_COMMENT_LEVEL=1
+	 and (CO_COMMENTER_ID=#{ul_id} or CO_COMMENTER_ID=a.CO_BLOG_CREATER_ID)
+	 order by CO_CT desc limit #{allCount},1)
+	 order by a.CO_CT desc limit #{pageSize}
+</select>
+<select id="getChildrenOfCommentAuthor" resultType="hashmap">
+select a.*,d.*,c.*,e.SN_NUMBER,d.UE_LOGIN_ID VB_LOGIN_ID,d.UE_LOGIN_ID  from comments a 
+	 left join searchnumber e on e.SN_LOGIN_ID=a.CO_COMMENTER_ID 
+	 left join (select * from user_extinf ) d on a.CO_COMMENTER_ID=d.UE_LOGIN_ID  
+	 left join (select * from user_baseinf ) c on c.UB_LOGIN_ID=a.CO_COMMENTER_ID  	
+     where  a.CO_BLOG_ID=#{blog_id} and  a.CO_COMMENT_LEVEL=2 and 
+	a.CO_REPLY_OBJECT=#{comment_id}  
+	 order by a.CO_CT asc
+</select>
+<select id="getChildrenOfCommentOthers" resultType="hashmap">
+select a.*,d.*,c.*,e.SN_NUMBER,d.UE_LOGIN_ID VB_LOGIN_ID,d.UE_LOGIN_ID  from comments a 
+	 left join searchnumber e on e.SN_LOGIN_ID=a.CO_COMMENTER_ID 
+	 left join (select * from user_extinf ) d on a.CO_COMMENTER_ID=d.UE_LOGIN_ID  
+	 left join (select * from user_baseinf ) c on c.UB_LOGIN_ID=a.CO_COMMENTER_ID  	
+     where  a.CO_BLOG_ID=#{blog_id} and  a.CO_COMMENT_LEVEL=2 and 
+	a.CO_REPLY_OBJECT=#{comment_id} and 
+	(a.CO_COMMENTER_ID=#{commenter_id} or a.CO_COMMENTER_ID=a.CO_BLOG_CREATER_ID)  
+	 order by a.CO_CT asc
+</select>
+<select id="getNotice" resultType="hashmap">
+  select a.NO_ID,f.SN_NUMBER,d.UE_NAME ECHO_UE_NAME,d.UE_HEADICON ECHO_UE_HEADICON,d.UE_LOGIN_ID, 
+	 e.CO_VOICE_PATH,e.CO_COMIMAGE_PATH,e.CO_IMAGE_PATH,e.CO_ID,e.CO_TEXT,e.CO_REPLY_OBJECT,
+	 e.CO_HAS_CHILD,e.CO_COMMENT_LEVEL,e.CO_COMMENTER_ID
+			,c.UE_HEADICON,c.UE_COMHEADICON,c.UE_NAME,b.VB_CT,b.VB_COMIMAGE_PATH
+			, b.VB_TITLE,b.VB_IMAGE_PATH,b.VB_TEXT,b.VB_VIDEO_PATH,b.VB_VOICE_PATH,b.VB_POP_COUNT,
+			b.VB_ID,b.VB_TYPE,b.VB_LOGIN_ID from notice a
+			 left join searchnumber f on f.SN_LOGIN_ID=a.NO_COMMENTER_ID
+			left join   comments  e on e.CO_ID=a.NO_COMMENT_ID
+			left join v_blog b on b.VB_ID=a.NO_BLOG_ID
+			left join user_extinf c on c.UE_LOGIN_ID=a.NO_COMMENTER_ID
+			left join (select UE_NAME,UE_HEADICON,UE_LOGIN_ID from user_extinf) d on d.UE_LOGIN_ID=a.NO_LOGIN_ID
+			 where  (a.NO_LOGIN_ID=#{ul_id} or a.NO_COMMENTER_ID=#{ul_id})  and b.VB_ISDELETED=0
+			 and a.NO_CT &lt;=(select NO_CT from notice where (NO_LOGIN_ID=#{ul_id} or NO_COMMENTER_ID=#{ul_id})  
+			 and VB_ISDELETED=0 order by NO_CT desc limit #{allCount},1)
+			 order by a.NO_CT desc limit #{pageSize}
+</select>
+<update id="deleteNotice">
+   update notice set NO_WHETHERDELETED=1 where NO_ID=#{no_id}
+</update>
+<update id="deleteNoticeCount">
+   update noticecount set NOT_ISDELETED=1 where NOT_LOGIN_ID=#{ul_id}
+</update>
+<select id="getNoticeChildren" resultType="hashmap">
+  select e.CO_ID,e.CO_TEXT,x.SN_NUMBER,e.CO_HAS_CHILD,e.CO_COMMENT_LEVEL,e.CO_COMMENTER_ID,e.CO_VOICE_PATH,e.CO_COMIMAGE_PATH,e.CO_IMAGE_PATH
+			,c.UE_HEADICON,c.UE_COMHEADICON,c.UE_LOGIN_ID,c.UE_NAME from comments e
+		   left join searchnumber x on x.SN_LOGIN_ID=e.CO_COMMENTER_ID
+			 left join (select * from user_extinf ) c on e.CO_COMMENTER_ID=c.UE_LOGIN_ID
+		 	 where e.CO_REPLY_OBJECT=#{co_id} order by e.CO_CT asc
+</select>
+</mapper>

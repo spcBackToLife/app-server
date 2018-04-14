@@ -1,0 +1,14 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <!-- namespace="com.richfit.scp.reporting.mapper.SbReportMapper" -->
+<mapper namespace="com.pk.mapper.TestMapper">
+ <select id="testName" resultType="hashmap">
+     SELECT *
+     FROM user_login
+     WHERE UL_ID =#{id}
+ </select>
+ <select id="getNotice" resultType="hashmap">
+    select * from user_notice order by UN_CT
+ </select>
+</mapper>
